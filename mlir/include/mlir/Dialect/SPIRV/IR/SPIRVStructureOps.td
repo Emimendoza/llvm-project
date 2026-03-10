@@ -66,8 +66,7 @@ def SPIRV_AddressOfOp : SPIRV_Op<"mlir.addressof",
 
 // -----
 
-def SPIRV_ConstantOp : SPIRV_Op<"Constant",
-    [ConstantLike,
+def SPIRV_ConstantOp : SPIRV_Op<"Constant", [ConstantLike,
      DeclareOpInterfaceMethods<OpAsmOpInterface, ["getAsmResultNames"]>,
      Pure]> {
   let summary = [{
@@ -135,7 +134,6 @@ def SPIRV_ConstantOp : SPIRV_Op<"Constant",
   let autogenSerialization = 0;
 }
 
-
 // -----
 
 def SPIRV_EXTConstantCompositeReplicateOp : SPIRV_ExtVendorOp<"ConstantCompositeReplicate", [Pure]> {
@@ -174,6 +172,43 @@ def SPIRV_EXTConstantCompositeReplicateOp : SPIRV_ExtVendorOp<"ConstantComposite
   let autogenSerialization = 0;
 
   let assemblyFormat = "` ` `[` $value `]` `:` type($replicated_constant) attr-dict";
+}
+
+// -----
+
+def SPIRV_EXTSpecConstantCompositeReplicateOp : SPIRV_ExtVendorOp<"SpecConstantCompositeReplicate", [InModuleScope, Symbol]> {
+  let summary = "Declare a new replicated composite specialization constant op.";
+
+  let description = [{
+    Represents a splat spec composite constant i.e., all elements of spec composite
+    constant have the same value. The splat value must come from a symbol reference
+    of spec constant instruction.
+
+    #### Example:
+
+    ```mlir
+    spirv.SpecConstant @sc_i32_1 = 1 : i32
+    spirv.EXT.SpecConstantCompositeReplicate @scc_splat_array_of_i32 (@sc_i32_1) : !spirv.array<3 x i32>
+    spirv.EXT.SpecConstantCompositeReplicate @scc_splat_struct_of_i32 (@sc_i32_1) : !spirv.struct<(i32, i32, i32)>
+    ```
+  }];
+
+  let availability = [
+    MinVersion<SPIRV_V_1_0>,
+    MaxVersion<SPIRV_V_1_6>,
+    Extension<[SPV_EXT_replicated_composites]>,
+    Capability<[SPIRV_C_ReplicatedCompositesEXT]>
+  ];
+
+  let arguments = (ins
+    TypeAttr:$type,
+    StrAttr:$sym_name,
+    SymbolRefAttr:$constituent
+  );
+
+  let results = (outs);
+
+  let autogenSerialization = 0;
 }
 
 // -----
@@ -286,6 +321,60 @@ def SPIRV_ExecutionModeOp : SPIRV_Op<"ExecutionMode", [InModuleScope]> {
   let builders = [
     OpBuilder<(ins "spirv::FuncOp":$function,
       "spirv::ExecutionMode":$executionMode, "ArrayRef<int32_t>":$params)>];
+}
+
+// -----
+
+def SPIRV_ExecutionModeIdOp : SPIRV_Op<"ExecutionModeId", []> {
+  let summary = [{
+    Declare an execution mode for an entry point, using <id>s as Extra
+    Operands.
+  }];
+
+  let description = [{
+    Entry Point must be the Entry Point <id> operand of an OpEntryPoint
+    instruction.
+
+    Mode is the execution mode. See Execution Mode.
+
+    This instruction is only valid if the Mode operand is an execution mode
+    that takes Extra Operands that are <id> operands.
+
+    <!-- End of AutoGen section -->
+
+    ```
+    [TODO]
+    ```
+
+    #### Example:
+
+    ```mlir
+    [TODO]
+    ```
+  }];
+
+  let availability = [
+    MinVersion<SPIRV_V_1_2>,
+    MaxVersion<SPIRV_V_1_6>,
+    Extension<[]>,
+    Capability<[]>
+  ];
+
+  let arguments = (ins
+    FlatSymbolRefAttr:$fn,
+    SPIRV_ExecutionModeAttr:$execution_mode,
+    FlatSymbolRefAttr:$values
+  );
+
+  let results = (outs);
+  
+  let hasVerifier = 0;
+  
+  let autogenSerialization = 0;
+  
+  let builders = [
+    OpBuilder<(ins "spirv::FuncOp":$function,
+      "spirv::ExecutionMode":$executionMode, "ArrayRef<FlatSymbolRefAttr>":$params)>];
 }
 
 // -----
@@ -724,43 +813,6 @@ def SPIRV_SpecConstantCompositeOp : SPIRV_Op<"SpecConstantComposite", [
   let results = (outs);
 
   let hasOpcode = 0;
-
-  let autogenSerialization = 0;
-}
-
-// -----
-
-def SPIRV_EXTSpecConstantCompositeReplicateOp : SPIRV_ExtVendorOp<"SpecConstantCompositeReplicate", [InModuleScope, Symbol]> {
-  let summary = "Declare a new replicated composite specialization constant op.";
-
-  let description = [{
-    Represents a splat spec composite constant i.e., all elements of spec composite
-    constant have the same value. The splat value must come from a symbol reference
-    of spec constant instruction.
-
-    #### Example:
-
-    ```mlir
-    spirv.SpecConstant @sc_i32_1 = 1 : i32
-    spirv.EXT.SpecConstantCompositeReplicate @scc_splat_array_of_i32 (@sc_i32_1) : !spirv.array<3 x i32>
-    spirv.EXT.SpecConstantCompositeReplicate @scc_splat_struct_of_i32 (@sc_i32_1) : !spirv.struct<(i32, i32, i32)>
-    ```
-  }];
-
-  let availability = [
-    MinVersion<SPIRV_V_1_0>,
-    MaxVersion<SPIRV_V_1_6>,
-    Extension<[SPV_EXT_replicated_composites]>,
-    Capability<[SPIRV_C_ReplicatedCompositesEXT]>
-  ];
-
-  let arguments = (ins
-    TypeAttr:$type,
-    StrAttr:$sym_name,
-    SymbolRefAttr:$constituent
-  );
-
-  let results = (outs);
 
   let autogenSerialization = 0;
 }
